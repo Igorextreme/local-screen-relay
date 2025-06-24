@@ -1,73 +1,100 @@
-# Welcome to your Lovable project
+# 📺 Local Screen Share
 
-## Project info
+> A real-time screen sharing system over **local network** — perfect for classrooms, labs, and offline environments.
 
-**URL**: https://lovable.dev/projects/95ddf597-f13a-4fb3-9b5f-6b3d17373035
+## 🚀 Overview
 
-## How can I edit this code?
+**Local Screen Share** is a lightweight and easy-to-use solution for broadcasting your screen to other devices on the same Wi-Fi network — **no internet required**. It's built using modern web technologies and works entirely within the browser.
 
-There are several ways of editing your application.
+---
 
-**Use Lovable**
+## 🧑‍💻 Getting Started
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/95ddf597-f13a-4fb3-9b5f-6b3d17373035) and start prompting.
+### 1. Install dependencies
 
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
+npm install
+```
+2. Build the server
+```bash
+npm run build:server
+```
+3. Start the development environment
+```bash
 npm run dev
 ```
+This runs both the frontend (Vite) and backend server simultaneously.
 
-**Edit a file directly in GitHub**
+4. Open the app in your browser
+```bash
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+http://localhost:5173
+```
+If you're on a different device in the same Wi-Fi network, use the local IP of the host machine, e.g.:
 
-**Use GitHub Codespaces**
+```bash
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+http://192.168.1.12:8080
+```
+## Features
+Screen Broadcasting
+📡 Real-time screen sharing over local network
 
-## What technologies are used for this project?
+⚙️ Automatic FPS adjustment
 
-This project is built with:
+🖼️ Live preview of the shared screen
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+🖱️ Option to share a tab, window, or full screen
 
-## How can I deploy this project?
+Viewer Mode
+👁️ Smooth real-time display
 
-Simply open [Lovable](https://lovable.dev/projects/95ddf597-f13a-4fb3-9b5f-6b3d17373035) and click on Share -> Publish.
+🔄 Auto-connect to available stream
 
-## Can I connect a custom domain to my Lovable project?
+🖥️ Fullscreen mode support
 
-Yes, you can!
+## How to Use
+To Start a Broadcast:
+Click “Transmit” on the homepage.
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+Click “Start Broadcasting”.
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+Choose the screen, window, or tab to share in the browser prompt.
+
+Share the server link displayed above the button, e.g.:
+
+```arduino
+
+Server: http://192.168.1.12:8080
+```
+Others on the network can open this link and click “View Broadcast”.
+
+## Project Motivation
+This tool was developed to assist students and teachers in environments where internet connectivity is limited or unavailable.
+
+In many computer science and software development courses, it can be difficult for students to follow along with live demonstrations. Local Screen Share solves this by providing a simple way to share a screen across a local Wi-Fi network without external dependencies — enabling better engagement and hands-on learning.
+
+## Built With
+Vite + React + TypeScript
+
+Tailwind CSS + tailwindcss-animate
+
+Radix UI components
+
+React Hook Form + zod for validation
+
+WebSockets (ws) for real-time communication
+
+Node.js backend (compiled with TypeScript)
+
+## Available Scripts
+Command	Description
+npm run dev	Start Vite and backend server concurrently
+npm run build	Build frontend app
+npm run build:server	Compile the server using tsconfig.server.json
+npm run start	Run only the compiled backend server
+npm run lint	Run ESLint on the entire project
+
+## License
+This project is open-source and available for educational or personal use.
+
