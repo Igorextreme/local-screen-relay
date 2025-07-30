@@ -9,8 +9,8 @@ export const videoConfig = {
   }
 };
 
-export const frameRateWithCursor = 16;    // ~60 FPS com cursor
-export const frameRateWithoutCursor = 100; // ~10 FPS sem cursor
+export const frameRateWithCursor = 8;     // ~120 FPS com cursor  
+export const frameRateWithoutCursor = 33;   // ~30 FPS sem cursor
 
 export class ScreenShareController {
   private model: ScreenShareModel;
@@ -120,6 +120,7 @@ export class ScreenShareController {
 
           ctx?.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
 
+          // Qualidade reduzida para melhor performance
           canvas.toBlob(
             (blob) => {
               if (blob && this.socket && this.socket.readyState === WebSocket.OPEN) {
@@ -135,7 +136,7 @@ export class ScreenShareController {
               }
             },
             'image/jpeg',
-            0.9
+            0.7  // Qualidade reduzida de 0.9 para 0.7 para melhor FPS
           );
         } catch (err) {
           console.error('Erro durante o envio de quadros:', err);
