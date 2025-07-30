@@ -9,8 +9,8 @@ export const videoConfig = {
   }
 };
 
-export const frameRateWithCursor = 5;     // ~200 FPS com cursor  
-export const frameRateWithoutCursor = 20;   // ~50 FPS sem cursor
+export const frameRateWithCursor = 8;     // ~120 FPS com cursor  
+export const frameRateWithoutCursor = 33;   // ~30 FPS sem cursor
 
 export class ScreenShareController {
   private model: ScreenShareModel;
@@ -99,70 +99,51 @@ export class ScreenShareController {
       this.model.setCurrentStream(stream);
       this.model.setTransmitting(true);
 
-      // Inicializar Web Worker para processamento otimizado
-      this.frameWorker = new Worker('/src/workers/frameWorker.ts', { type: 'module' });
-      
+      const videoTrack = stream.getVideoTracks()[0];
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
       const videoElement = document.createElement('video');
+
       videoElement.srcObject = stream;
       await videoElement.play();
 
-      // Canvas reutilizável para melhor performance
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d', { 
-        alpha: false, 
-        desynchronized: true,
-        willReadFrequently: false 
-      });
-
-      // Configurar Worker
-      this.frameWorker.onmessage = (e) => {
-        const { success, data } = e.data;
-        if (success && data && this.socket?.readyState === WebSocket.OPEN) {
-          this.socket.send(data);
-        }
-      };
-
-      // Função otimizada para captura de frames
-      const captureFrame = () => {
+      // Função para enviar frames otimizada
+      const sendFrame = () => {
         if (!stream.active || !this.socket || this.socket.readyState !== WebSocket.OPEN) {
           this.stopTransmission();
           return;
         }
 
         try {
-          // Redimensionar canvas apenas se necessário
-          const videoWidth = videoElement.videoWidth;
-          const videoHeight = videoElement.videoHeight;
-          
-          if (canvas.width !== videoWidth || canvas.height !== videoHeight) {
-            canvas.width = videoWidth;
-            canvas.height = videoHeight;
-          }
+          canvas.width = videoElement.videoWidth;
+          canvas.height = videoElement.videoHeight;
 
-          ctx?.drawImage(videoElement, 0, 0);
+          ctx?.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
 
-          // Obter ImageData e enviar para Worker
-          const imageData = ctx?.getImageData(0, 0, canvas.width, canvas.height);
-          if (imageData && this.frameWorker) {
-            // Qualidade muito baixa para FPS máximo
-            const quality = this.isCursorOverPreview ? 0.4 : 0.3;
-            const maxWidth = this.isCursorOverPreview ? 1280 : 960;
-            
-            this.frameWorker.postMessage({
-              type: 'PROCESS_FRAME',
-              imageData: imageData.data,
-              width: canvas.width,
-              height: canvas.height,
-              quality: quality,
-              maxWidth: maxWidth
-            }, { transfer: [imageData.data.buffer] });
-          }
+          // Qualidade reduzida para melhor performance
+          canvas.toBlob(
+            (blob) => {
+              if (blob && this.socket && this.socket.readyState === WebSocket.OPEN) {
+                blob.arrayBuffer()
+                  .then((buffer) => {
+                    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+                      this.socket.send(buffer);
+                    }
+                  })
+                  .catch((err) => {
+                    console.error('Erro ao converter Blob para ArrayBuffer:', err);
+                  });
+              }
+            },
+            'image/jpeg',
+            0.7  // Qualidade reduzida de 0.9 para 0.7 para melhor FPS
+          );
         } catch (err) {
-          console.error('Erro durante captura de frame:', err);
+          console.error('Erro durante o envio de quadros:', err);
         }
       };
 
-      // Sistema de agendamento ultra-otimizado
+      // Sistema de agendamento otimizado para manter FPS constante
       const scheduleFrames = () => {
         const frameInterval = this.isCursorOverPreview 
           ? frameRateWithCursor 
@@ -171,16 +152,17 @@ export class ScreenShareController {
         const nextFrame = () => {
           if (!stream.active) return;
 
-          captureFrame();
+          sendFrame();
 
           if (this.isPageVisible) {
-            // Usa setInterval para máxima performance quando visível
+            // Usa requestAnimationFrame + setTimeout para melhor precisão quando visível
             this.animationFrameId = requestAnimationFrame(() => {
               setTimeout(nextFrame, frameInterval);
             });
           } else {
-            // FPS ainda mais reduzido quando inativo
-            setTimeout(nextFrame, Math.max(frameInterval * 3, 100));
+            // Usa setTimeout direto quando invisível, mas com FPS reduzido para economizar recursos
+            const inactiveInterval = Math.max(frameInterval * 2, 33); // Máximo 30 FPS quando inativo
+            setTimeout(nextFrame, inactiveInterval);
           }
         };
 
