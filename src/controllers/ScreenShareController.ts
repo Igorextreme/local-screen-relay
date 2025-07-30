@@ -16,9 +16,13 @@ export class ScreenShareController {
   private model: ScreenShareModel;
   private socket: WebSocket | null = null;
   private isCursorOverPreview = false;
+  private isPageVisible = true;
+  private frameWorker: Worker | null = null;
+  private animationFrameId: number | null = null;
 
   constructor(model: ScreenShareModel) {
     this.model = model;
+    this.initializePageVisibility();
   }
 
   async initializeWebSocket(): Promise<void> {
@@ -57,6 +61,23 @@ export class ScreenShareController {
     this.isCursorOverPreview = isOver;
   }
 
+  private initializePageVisibility(): void {
+    // Detecta mudanças de visibilidade da página
+    document.addEventListener('visibilitychange', () => {
+      this.isPageVisible = !document.hidden;
+      console.log('Página visível:', this.isPageVisible);
+    });
+
+    // Detecta foco/perda de foco da janela
+    window.addEventListener('focus', () => {
+      this.isPageVisible = true;
+    });
+
+    window.addEventListener('blur', () => {
+      this.isPageVisible = false;
+    });
+  }
+
   async startTransmission(): Promise<void> {
     if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
       await this.initializeWebSocket();
@@ -77,7 +98,8 @@ export class ScreenShareController {
       videoElement.srcObject = stream;
       await videoElement.play();
 
-      const sendFrames = async () => {
+      // Função para enviar frames otimizada
+      const sendFrame = () => {
         if (!stream.active || !this.socket || this.socket.readyState !== WebSocket.OPEN) {
           this.stopTransmission();
           return;
@@ -106,18 +128,38 @@ export class ScreenShareController {
             'image/jpeg',
             0.9
           );
-
-          const frameInterval = this.isCursorOverPreview 
-            ? frameRateWithCursor 
-            : frameRateWithoutCursor;
-
-          setTimeout(sendFrames, frameInterval);
         } catch (err) {
           console.error('Erro durante o envio de quadros:', err);
         }
       };
 
-      sendFrames();
+      // Sistema de agendamento otimizado para manter FPS constante
+      const scheduleFrames = () => {
+        const frameInterval = this.isCursorOverPreview 
+          ? frameRateWithCursor 
+          : frameRateWithoutCursor;
+
+        const nextFrame = () => {
+          if (!stream.active) return;
+
+          sendFrame();
+
+          if (this.isPageVisible) {
+            // Usa requestAnimationFrame + setTimeout para melhor precisão quando visível
+            this.animationFrameId = requestAnimationFrame(() => {
+              setTimeout(nextFrame, frameInterval);
+            });
+          } else {
+            // Usa setTimeout direto quando invisível, mas com FPS reduzido para economizar recursos
+            const inactiveInterval = Math.max(frameInterval * 2, 33); // Máximo 30 FPS quando inativo
+            setTimeout(nextFrame, inactiveInterval);
+          }
+        };
+
+        nextFrame();
+      };
+
+      scheduleFrames();
 
     } catch (error) {
       console.error('Erro ao iniciar transmissão:', error);
@@ -125,11 +167,23 @@ export class ScreenShareController {
     }
   }
 
+  private scheduleNextFrame: ((callback: () => void) => void) | null = null;
+
   stopTransmission(): void {
     const state = this.model.getState();
     if (state.currentStream) {
       state.currentStream.getTracks().forEach(track => track.stop());
       this.model.setCurrentStream(null);
+    }
+    
+    if (this.animationFrameId) {
+      cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = null;
+    }
+
+    if (this.frameWorker) {
+      this.frameWorker.terminate();
+      this.frameWorker = null;
     }
     
     if (this.socket) {
