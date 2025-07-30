@@ -33,7 +33,9 @@ export class ScreenShareController {
     }
 
     try {
-      this.socket = new WebSocket(`ws://${state.serverIP}:3000/transmitter`);
+      // Usa o mesmo protocolo da página atual para WebSocket
+      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      this.socket = new WebSocket(`${wsProtocol}//${state.serverIP}:3000/transmitter`);
       this.model.setConnectionStatus('connecting');
 
       this.socket.onopen = () => {
@@ -79,6 +81,13 @@ export class ScreenShareController {
   }
 
   async startTransmission(): Promise<void> {
+    // Verifica se a API está disponível
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+      console.error('API de captura de tela não disponível. Certifique-se de estar usando HTTPS ou localhost.');
+      this.model.setConnectionStatus('error');
+      return;
+    }
+
     if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
       await this.initializeWebSocket();
       // Aguarda um pouco para a conexão ser estabelecida

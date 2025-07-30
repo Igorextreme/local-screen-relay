@@ -47,7 +47,11 @@ export class ScreenShareModel {
 
   async fetchServerIP(): Promise<void> {
     try {
-      const response = await fetch('http://localhost:3000/local-ip');
+      // Tenta primeiro com HTTPS se disponível, senão HTTP
+      const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+      const url = `${protocol}//localhost:3000/local-ip`;
+      
+      const response = await fetch(url);
       if (!response.ok) {
         throw new Error(`Erro HTTP! status: ${response.status}`);
       }
@@ -56,6 +60,7 @@ export class ScreenShareModel {
       console.log(`IP do servidor obtido: ${data.ip}`);
     } catch (error) {
       console.error('Erro ao obter o IP do servidor:', error);
+      console.warn('Usando localhost como fallback. Certifique-se de que o servidor está rodando em http://localhost:3000');
       this.state.serverIP = 'localhost';
     }
     this.notify();

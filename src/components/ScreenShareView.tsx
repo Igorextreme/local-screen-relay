@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { ScreenShareController } from '../controllers/ScreenShareController';
 import { ScreenShareModel } from '../models/ScreenShareModel';
 import { Monitor, Square, Wifi, WifiOff } from 'lucide-react';
+import { SecurityWarning } from './SecurityWarning';
 
 const ScreenShareView: React.FC = () => {
   const [model] = useState(() => new ScreenShareModel());
@@ -50,6 +51,7 @@ const ScreenShareView: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-4xl mx-auto space-y-6">
+        <SecurityWarning />
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
