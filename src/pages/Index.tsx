@@ -19,6 +19,7 @@ const Index = () => {
             Transmita sua tela e permita que outros visualizem instantaneamente.
           </p>
         </div>
+        
 
         <div className="grid md:grid-cols-2 gap-6 mt-12">
           <Card className="hover:shadow-lg transition-shadow">
